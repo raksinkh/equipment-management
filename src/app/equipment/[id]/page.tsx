@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Equipment, Booking } from '@/lib/supabase'
@@ -14,14 +14,9 @@ export default function EquipmentDetailPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchEquipment()
-      fetchBookings()
-    }
-  }, [params.id])
-
-  const fetchEquipment = async () => {
+  const fetchEquipment = useCallback(async () => {
+    if (!params.id) return
+    
     try {
       const { data, error } = await supabase
         .from('equipment')
@@ -34,9 +29,11 @@ export default function EquipmentDetailPage() {
     } catch (error) {
       console.error('Error fetching equipment:', error)
     }
-  }
+  }, [params.id])
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
+    if (!params.id) return
+    
     try {
       const { data, error } = await supabase
         .from('bookings')
@@ -54,7 +51,12 @@ export default function EquipmentDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    fetchEquipment()
+    fetchBookings()
+  }, [fetchEquipment, fetchBookings])
 
   const getStatusColor = (status: string) => {
     switch (status) {

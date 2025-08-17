@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Equipment } from '@/lib/supabase'
-import { ArrowLeft, Calendar, Clock, MapPin, Package, Send } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Package, Send } from 'lucide-react'
 import Link from 'next/link'
 
 export default function NewBookingPage() {
@@ -13,7 +13,6 @@ export default function NewBookingPage() {
   const searchParams = useSearchParams()
   const { user } = useAuth()
   const [equipment, setEquipment] = useState<Equipment | null>(null)
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   
   const [formData, setFormData] = useState({
@@ -25,13 +24,9 @@ export default function NewBookingPage() {
 
   const equipmentId = searchParams.get('equipment')
 
-  useEffect(() => {
-    if (equipmentId) {
-      fetchEquipment()
-    }
-  }, [equipmentId])
-
-  const fetchEquipment = async () => {
+  const fetchEquipment = useCallback(async () => {
+    if (!equipmentId) return
+    
     try {
       const { data, error } = await supabase
         .from('equipment')
@@ -45,7 +40,11 @@ export default function NewBookingPage() {
       console.error('Error fetching equipment:', error)
       router.push('/dashboard')
     }
-  }
+  }, [equipmentId, router])
+
+  useEffect(() => {
+    fetchEquipment()
+  }, [fetchEquipment])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
